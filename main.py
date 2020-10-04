@@ -45,7 +45,7 @@ class ResidualBlock(nn.Module):
         if self.downsample is not None:
             x = self.downsample(x)
         out += x
-        return out
+        return F.relu(out)
 
 class ResNet(nn.Module):
     def __init__(self, n):
@@ -90,7 +90,7 @@ model = ResNet(3).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.1, weight_decay=0.0001, momentum=0.9)
 
-total_epoch = 30
+total_epoch = 100
 total_batch = len(data_loader)
 
 print("[+] Train Start")
@@ -110,7 +110,8 @@ for epoch in range(total_epoch):
         avg_cost += cost
     avg_cost /= total_batch
 
-    print("Epoch: %d, Cost: %f" % (epoch, avg_cost))
+    if (epoch+1) % 10 == 0:
+      print("Epoch: %d/%d, Cost: %f" % (epoch+1, total_epoch, avg_cost))
 end = time.time()
 t = int(end - start)
 print("[+] Training time: %dm %ds" %(t//60, t%60))
@@ -126,17 +127,21 @@ def accuracy(output, target):
     pred = pred.t()
     correct = pred.eq(target.view(1, -1).expand_as(pred))
 
-    correct = correct[:5].view(-1).float().sum(0)
-    return correct
+    error_1 = batch_size - correct[:1].view(-1).float().sum(0)
+    error_5 = batch_size - correct[:5].view(-1).float().sum(0)
+    return [error_1, error_5]
 
 total_test = len(data_test)
-acc = 0
+error_1 = 0
+error_5 = 0
 
 for x, y in test_loader:
     x = x.to(device)
     y = y.to(device)
     y_pred = model(x)
-    acc += accuracy(y_pred, y)
+    e1, e5 = accuracy(y_pred, y)
+    error_1 += e1
+    error_5 += e5
 
-acc = total_test - acc
-print("Top-5 Error: %d/%d (%.2f%%)" % (acc, total_test, acc/total_test*100))
+print("Top-1 Error: %d/%d (%.2f%%)" % (error_1, total_test, error_1/total_test*100))
+print("Top-5 Error: %d/%d (%.2f%%)" % (error_5, total_test, error_5/total_test*100))
