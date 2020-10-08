@@ -1,7 +1,7 @@
 # ResNet
 
 - ResNet 20 for CIFAR-10
-- Training time : 6m 17s
+- Training time : 22m 46s
 - Top-1 Error : 1256/10000 (12.56%)
 - Top-5 Error : 49/10000 (0.49%)
 
